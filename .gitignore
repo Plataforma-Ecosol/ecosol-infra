@@ -1,0 +1,7 @@
+# Configuração local de caminhos. O exemplo é versionado; o real, não.
+.env
+!.env.example
+
+# Sistema operacional
+.DS_Store
+Thumbs.db

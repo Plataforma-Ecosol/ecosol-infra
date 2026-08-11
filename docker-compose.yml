@@ -1,0 +1,56 @@
+# Ambiente de desenvolvimento local COMPLETO: Postgres + Django + Next.js.
+#
+# A partir desta pasta:  docker compose up --build
+#
+# O banco e o backend NÃO são redeclarados aqui — vêm por `include` do compose
+# que já existe em `ecosol-backend`. É de propósito: manter duas cópias das
+# mesmas definições é como a pasta `infra/` antiga envelheceu em silêncio até
+# alguém subir o ambiente errado. Cada serviço é descrito uma vez, no
+# repositório do código que ele executa; aqui só se acrescenta o frontend e a
+# ligação entre os três.
+
+# Nome do projeto fixado, e igual ao que o compose do backend produz por padrão
+# (o Compose usa o nome da pasta, e as duas se chamam `infra`).
+#
+# Isso é DELIBERADO: os dois composes passam a mexer nos mesmos containers e no
+# mesmo volume de banco. Se fossem projetos diferentes, existiriam dois
+# Postgres, e quem cadastrasse um coletivo pelo Admin de um deles não o veria
+# no site do outro — sem nenhuma mensagem explicando por quê.
+#
+# O preço: subir só o backend depois de ter subido tudo faz o Compose avisar
+# que `frontend` é um container órfão. É só um aviso; não use `--remove-orphans`
+# nessa situação.
+name: infra
+
+include:
+  - path: ${CAMINHO_BACKEND:-../apps/ecosol-backend}/infra/docker-compose.yml
+
+services:
+  # Ajuste no serviço que veio do `include`. Declarar o mesmo nome não
+  # substitui o serviço: o Compose mescla o que está aqui por cima.
+  backend:
+    environment:
+      # O Next chama o Django pelo NOME DO SERVIÇO (`backend`), e o Django
+      # valida o cabeçalho Host contra esta lista. Sem `backend` aqui, toda
+      # requisição vinda do frontend morre em DisallowedHost — e o sintoma é
+      # um erro 400 que não menciona ALLOWED_HOSTS em lugar nenhum.
+      DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1,0.0.0.0,backend"
+
+  frontend:
+    build:
+      context: ${CAMINHO_FRONTEND:-../apps/ecosol-frontend}
+    environment:
+      # Duas variáveis, e elas são DIFERENTES de propósito.
+      #
+      # O servidor do Next fala com o Django pela rede interna do Docker; o
+      # navegador da pessoa, não — para ele, `backend` não existe. Como o
+      # Django monta a URL das imagens a partir do host da requisição, sem a
+      # segunda variável as imagens voltariam apontando para `backend:8001` e
+      # quebrariam no navegador, sem erro nenhum no log do servidor.
+      API_URL: http://backend:8001
+      API_URL_PUBLICA: http://localhost:8001
+      SITE_URL: http://localhost:3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend

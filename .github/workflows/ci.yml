@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, staging]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Este repositório vai para `infra/`, e não para a raiz: é de lá que os
+      # caminhos `../apps/...` do compose fazem sentido. A árvore montada aqui
+      # é a mesma que o desenvolvedor tem na máquina.
+      - name: Clonar este repositório
+        uses: actions/checkout@v4
+        with:
+          path: infra
+
+      # Os dois repos de código entram porque o `include` e os contextos de
+      # build apontam para eles: sem os dois ao lado, `docker compose config`
+      # falha — que é justamente o erro que este CI existe para pegar.
+      # Ambos são públicos, então não é preciso token.
+      - name: Clonar o backend
+        uses: actions/checkout@v4
+        with:
+          repository: Plataforma-Ecosol/ecosol-backend
+          path: apps/ecosol-backend
+
+      - name: Clonar o frontend
+        uses: actions/checkout@v4
+        with:
+          repository: Plataforma-Ecosol/ecosol-frontend
+          path: apps/ecosol-frontend
+
+      # Resolve o YAML, aplica o `include`, interpola as variáveis e valida o
+      # resultado. É o equivalente, aqui, ao lint dos outros dois repositórios.
+      - name: Validar o compose
+        working-directory: infra
+        run: docker compose config --quiet
+
+      # A validação acima não olha o CONTEÚDO: um serviço poderia sumir num
+      # refactor do include e o config continuaria válido.
+      - name: Conferir que os três serviços estão declarados
+        working-directory: infra
+        run: |
+          servicos=$(docker compose config --services | sort | tr '\n' ' ')
+          echo "serviços: $servicos"
+          if [ "$servicos" != "backend db frontend " ]; then
+            echo "::error::esperava 'backend db frontend ', veio '$servicos'"
+            exit 1
+          fi
+
+      # O Django recusa requisição cujo Host não esteja em ALLOWED_HOSTS. O
+      # frontend chama o backend pelo nome do serviço, então `backend` PRECISA
+      # estar na lista — e é um daqueles erros que só aparecem em tempo de
+      # execução, com um 400 que não menciona a causa.
+      - name: Conferir que o backend aceita o Host do frontend
+        working-directory: infra
+        run: |
+          docker compose config | grep -q 'DJANGO_ALLOWED_HOSTS.*backend' || {
+            echo "::error::'backend' não está em DJANGO_ALLOWED_HOSTS"
+            exit 1
+          }
