@@ -22,16 +22,31 @@ jobs:
       # build apontam para eles: sem os dois ao lado, `docker compose config`
       # falha — que é justamente o erro que este CI existe para pegar.
       # Ambos são públicos, então não é preciso token.
+      #
+      # `ref: staging` é obrigatório, e não preferência. O checkout traz a
+      # branch PADRÃO por omissão, e a `main` do backend ainda não tem a pasta
+      # `infra/` — ela entrou pela `staging` e a `main` só recebe no release.
+      # Sem isto o CI falha com "no such file or directory" ao resolver o
+      # `include`, que foi exatamente o que aconteceu na primeira execução.
+      #
+      # `staging` é a branch de integração do projeto: validar contra ela é
+      # validar contra o que de fato está integrado.
       - name: Clonar o backend
         uses: actions/checkout@v4
         with:
           repository: Plataforma-Ecosol/ecosol-backend
+          ref: staging
           path: apps/ecosol-backend
 
+      # O `Dockerfile` do frontend ainda não chegou à `staging` — está no PR do
+      # scaffold. Não é problema aqui: `docker compose config` resolve caminhos
+      # e não lê o Dockerfile, então este CI fica verde antes e depois daquele
+      # merge. O que ele precisa é que o DIRETÓRIO exista.
       - name: Clonar o frontend
         uses: actions/checkout@v4
         with:
           repository: Plataforma-Ecosol/ecosol-frontend
+          ref: staging
           path: apps/ecosol-frontend
 
       # Resolve o YAML, aplica o `include`, interpola as variáveis e valida o

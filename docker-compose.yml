@@ -26,16 +26,11 @@ include:
   - path: ${CAMINHO_BACKEND:-../apps/ecosol-backend}/infra/docker-compose.yml
 
 services:
-  # Ajuste no serviço que veio do `include`. Declarar o mesmo nome não
-  # substitui o serviço: o Compose mescla o que está aqui por cima.
-  backend:
-    environment:
-      # O Next chama o Django pelo NOME DO SERVIÇO (`backend`), e o Django
-      # valida o cabeçalho Host contra esta lista. Sem `backend` aqui, toda
-      # requisição vinda do frontend morre em DisallowedHost — e o sintoma é
-      # um erro 400 que não menciona ALLOWED_HOSTS em lugar nenhum.
-      DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1,0.0.0.0,backend"
-
+  # Nenhum ajuste ao `backend` aqui, de propósito. Ele precisa aceitar o Host
+  # `backend` (é assim que o Next o alcança), mas isso é declarado no compose
+  # DELE — o nome do serviço nasce lá. Tentar sobrescrever daqui não funciona
+  # em todas as versões do Compose: a do runner do CI recusa com
+  # "services.backend conflicts with imported resource".
   frontend:
     build:
       context: ${CAMINHO_FRONTEND:-../apps/ecosol-frontend}
