@@ -10,7 +10,8 @@
 # ligação entre os três.
 
 # Nome do projeto fixado, e igual ao que o compose do backend produz por padrão
-# (o Compose usa o nome da pasta, e as duas se chamam `infra`).
+# (lá o Compose adota o nome da pasta, que é `infra`). Aqui ele é declarado, e
+# não herdado: esta pasta se chama `ecosol-infra`, o nome que o `git clone` cria.
 #
 # Isso é DELIBERADO: os dois composes passam a mexer nos mesmos containers e no
 # mesmo volume de banco. Se fossem projetos diferentes, existiriam dois

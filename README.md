@@ -22,9 +22,14 @@ ecosol-fullstack/
 ├── apps/
 │   ├── ecosol-backend/     # repo Git → Django + DRF
 │   └── ecosol-frontend/    # repo Git → Next.js
-└── infra/                  # ESTE repositório
+└── ecosol-infra/           # ESTE repositório
     └── docker-compose.yml
 ```
+
+O nome da pasta é o que `git clone` cria por padrão — não o renomeie por
+gosto, mas saiba que ele **não** afeta nada: os caminhos do compose são
+relativos ao próprio arquivo, e o nome do projeto Docker está fixado no YAML
+(`name: infra`), não vem da pasta.
 
 Se a sua árvore for diferente, copie `.env.example` para `.env` e ajuste
 `CAMINHO_BACKEND` e `CAMINHO_FRONTEND`. Sem `.env`, os padrões acima já valem.
@@ -83,7 +88,9 @@ para trabalho de backend, sem esperar a imagem do Next:
 cd ../apps/ecosol-backend/infra && docker compose up
 ```
 
-Os dois usam o **mesmo nome de projeto** (`infra`), de propósito: compartilham
+Os dois usam o **mesmo nome de projeto** (`infra`) — o do backend porque o
+Compose adota o nome da pasta, e este porque o declara explicitamente no YAML.
+Isso é de propósito: os dois compartilham
 containers e volume de banco. Se fossem projetos separados, existiriam dois
 Postgres, e quem cadastrasse um coletivo pelo Admin de um não o veria no site do
 outro — sem nenhuma mensagem explicando por quê.
