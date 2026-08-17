@@ -10,13 +10,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Este repositório vai para `infra/`, e não para a raiz: é de lá que os
-      # caminhos `../apps/...` do compose fazem sentido. A árvore montada aqui
-      # é a mesma que o desenvolvedor tem na máquina.
+      # Este repositório vai para `ecosol-infra/`, e não para a raiz: é de lá
+      # que os caminhos `../apps/...` do compose fazem sentido. O nome da pasta
+      # é o que o `git clone` cria — a árvore montada aqui é a mesma que o
+      # desenvolvedor tem na máquina.
       - name: Clonar este repositório
         uses: actions/checkout@v4
         with:
-          path: infra
+          path: ecosol-infra
 
       # Os dois repos de código entram porque o `include` e os contextos de
       # build apontam para eles: sem os dois ao lado, `docker compose config`
@@ -52,13 +53,13 @@ jobs:
       # Resolve o YAML, aplica o `include`, interpola as variáveis e valida o
       # resultado. É o equivalente, aqui, ao lint dos outros dois repositórios.
       - name: Validar o compose
-        working-directory: infra
+        working-directory: ecosol-infra
         run: docker compose config --quiet
 
       # A validação acima não olha o CONTEÚDO: um serviço poderia sumir num
       # refactor do include e o config continuaria válido.
       - name: Conferir que os três serviços estão declarados
-        working-directory: infra
+        working-directory: ecosol-infra
         run: |
           servicos=$(docker compose config --services | sort | tr '\n' ' ')
           echo "serviços: $servicos"
@@ -72,7 +73,7 @@ jobs:
       # estar na lista — e é um daqueles erros que só aparecem em tempo de
       # execução, com um 400 que não menciona a causa.
       - name: Conferir que o backend aceita o Host do frontend
-        working-directory: infra
+        working-directory: ecosol-infra
         run: |
           docker compose config | grep -q 'DJANGO_ALLOWED_HOSTS.*backend' || {
             echo "::error::'backend' não está em DJANGO_ALLOWED_HOSTS"
